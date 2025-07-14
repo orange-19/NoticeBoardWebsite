@@ -1,6 +1,24 @@
-# Notice Board Database Setup
+# Notice Board Website
 
-This project contains the MySQL database schema for a notice board application.
+A comprehensive notice board web application built with Streamlit, featuring user authentication, database integration, and an admin dashboard.
+
+## Features
+
+### 🔐 Authentication System
+- Secure login with database and fallback credentials
+- Session management with Streamlit session state
+- Role-based access control (admin/user)
+
+### 🔧 Admin Dashboard
+- **Add Notice**: Form to create new notices with title, content, priority, category
+- **Manage Notices**: Table view with edit/delete functionality, search and filter options
+- **Statistics**: Visual analytics with charts showing notice distribution by category, priority, and status
+
+### 🎨 User Interface
+- Clean, modern Streamlit interface
+- Responsive design with proper validation
+- Interactive forms and data tables
+- Visual charts and statistics
 
 ## Database Schema
 
@@ -9,21 +27,29 @@ The database consists of two main tables:
 ### Users Table
 - `id` (INT, Primary Key, Auto Increment)
 - `username` (VARCHAR, Unique, Not Null)
-- `password_hash` (VARCHAR, Not Null)
+- `email` (VARCHAR, Unique, Not Null)
+- `password` (VARCHAR, Not Null)
 - `role` (ENUM: 'admin', 'user', Default: 'user')
+- `status` (ENUM: 'active', 'inactive', Default: 'active')
+- `created_at` (TIMESTAMP, Default: CURRENT_TIMESTAMP)
+- `last_login` (TIMESTAMP, NULL)
 
 ### Notices Table
 - `id` (INT, Primary Key, Auto Increment)
-- `title` (VARCHAR(200), Not Null)
+- `title` (VARCHAR(255), Not Null)
 - `content` (TEXT, Not Null)
-- `date_posted` (DATETIME, Default: CURRENT_TIMESTAMP)
-- `priority` (ENUM: 'High', 'Medium', 'Low', Default: 'Medium')
 - `category` (VARCHAR(50), Not Null)
-- `posted_by` (INT, Foreign Key to users.id)
+- `priority` (ENUM: 'low', 'medium', 'high', Default: 'medium')
+- `status` (ENUM: 'active', 'inactive', 'expired', Default: 'active')
+- `user_id` (INT, Foreign Key to users.id)
+- `created_at` (TIMESTAMP, Default: CURRENT_TIMESTAMP)
+- `updated_at` (TIMESTAMP, Default: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)
+- `expires_at` (TIMESTAMP, NULL)
 
 ## Setup Instructions
 
 ### Prerequisites
+- Python 3.8 or higher
 - MySQL Server 5.7 or higher
 - MySQL client or MySQL Workbench
 
@@ -50,7 +76,7 @@ The database consists of two main tables:
    source db_setup.sql;
    ```
    
-   Or alternatively, you can run the script directly:
+   Or alternatively:
    ```bash
    mysql -u root -p < db_setup.sql
    ```
@@ -63,87 +89,30 @@ The database consists of two main tables:
    SELECT * FROM notices;
    ```
 
-### Default Users
+### Application Setup
 
-The setup script creates two default users:
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/orange-19/NoticeBoardWebsite.git
+   cd NoticeBoardWebsite
+   ```
 
-1. **Admin User**
-   - Username: `admin`
-   - Role: `admin`
-   - Password Hash: `$2y$10$example_admin_password_hash_here`
-
-2. **Regular User**
-   - Username: `user1`
-   - Role: `user`
-   - Password Hash: `$2y$10$example_user_password_hash_here`
-
-**Important:** The password hashes in the setup script are examples. In a real application, you should:
-- Generate proper bcrypt hashes for actual passwords
-- Use a secure password hashing library in your application
-- Never store plain text passwords
-
-### Configuration for Applications
-
-When connecting to this database from your application, use the following connection parameters:
-
-```
-Database: notice_board
-Host: localhost (or your MySQL server host)
-Port: 3306 (default MySQL port)
-Username: [your MySQL username]
-Password: [your MySQL password]
-```
-
-## Database Relationships
-
-- The `notices` table has a foreign key relationship with the `users` table
-- `notices.posted_by` references `users.id`
-- When a user is deleted, all their notices are also deleted (CASCADE)
-
-## Sample Data
-
-The setup script includes sample notices for testing purposes. You can remove these by running:
-
-```sql
-DELETE FROM notices WHERE id IN (1, 2);
-```
-
-## Security Notes
-
-1. **Password Security**: Replace the example password hashes with properly generated hashes
-2. **Database Permissions**: Create specific database users with limited permissions for your application
-3. **Backup**: Regular database backups are recommended
-4. **Environment Variables**: Store database credentials in environment variables, not in code
-
-## Troubleshooting
-
-### Common Issues
-
-1. **"Database already exists" error**: The script uses `CREATE DATABASE IF NOT EXISTS`, so this shouldn't occur
-2. **Permission denied**: Ensure your MySQL user has CREATE and INSERT privileges
-3. **Foreign key constraint fails**: Ensure the users table is created before the notices table
-
-### Reset Database
-
-To completely reset the database:
-
-```sql
-DROP DATABASE IF EXISTS notice_board;
-source db_setup.sql;
-```
-
-## Streamlit UI Application
-
-This project now includes a complete Streamlit web application with user authentication.
-
-### Running the Application
-
-1. **Install Dependencies**
+2. **Install Dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-2. **Run the Application**
+3. **Configure Database Connection**
+   Update the database configuration in `db.py` or set environment variables:
+   ```bash
+   export DB_HOST=localhost
+   export DB_PORT=3306
+   export DB_USER=root
+   export DB_PASSWORD=your_password
+   export DB_NAME=notice_board
+   ```
+
+4. **Run the Application**
    ```bash
    streamlit run app.py
    ```
@@ -153,7 +122,7 @@ This project now includes a complete Streamlit web application with user authent
    python run_app.py
    ```
 
-3. **Access the Application**
+5. **Access the Application**
    - Open your browser to `http://localhost:8501`
    - Use the demo accounts to log in
 
@@ -166,30 +135,77 @@ The application includes the following demo accounts:
 - **john_doe** (Password: `password123`) - Demo user account
 - **jane_admin** (Password: `admin456`) - Demo admin account
 
-### Features
-
-- **Authentication System**: Secure login with database and fallback credentials
-- **Session Management**: Streamlit session state management
-- **Role-based Access**: Different interfaces for admin and regular users
-- **Responsive UI**: Clean, modern interface with proper validation
-- **Error Handling**: Comprehensive error messages and validation
-
-### File Structure
+## File Structure
 
 ```
 ├── app.py              # Main Streamlit application
+├── admin_dashboard.py  # Admin dashboard with tabs
 ├── auth.py             # Authentication module
-├── db.py               # Database connection module
+├── db.py               # Database connection and operations
+├── db_setup.sql        # Database schema and sample data
 ├── requirements.txt    # Python dependencies
 ├── run_app.py          # Application startup script
 ├── test_login.py       # Login functionality tests
 └── README.md           # This file
 ```
 
-## Next Steps
+## Admin Dashboard Features
 
-After setting up the database, you can:
-1. Create your application's database connection layer
-2. Implement user authentication using the password hashes
-3. Build CRUD operations for notices
-4. Add additional tables as needed for your application
+### 📝 Add Notice Tab
+- Form with title, content, priority, category fields
+- Optional expiration date setting
+- Status selection (active/inactive/expired)
+- Form validation and success feedback
+
+### 📋 Manage Notices Tab
+- Searchable and filterable notice table
+- Edit notices inline with modal forms
+- Delete notices with confirmation
+- Filter by category, priority, status
+- Search in title and content
+
+### 📊 Statistics Tab
+- Key metrics dashboard
+- Visual charts using Plotly:
+  - Pie chart for category distribution
+  - Bar charts for priority and status distribution
+- Detailed statistics tables
+- Recent notices counter (last 30 days)
+
+## Security Features
+
+1. **Password Security**: SHA-256 hashing for stored passwords
+2. **Database Permissions**: Connection pooling with proper error handling
+3. **Session Management**: Secure session state management
+4. **Input Validation**: Comprehensive form validation
+5. **Error Handling**: Graceful error handling with user-friendly messages
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Error**: Check MySQL service status and credentials
+2. **Permission Denied**: Ensure MySQL user has proper privileges
+3. **Module Not Found**: Install all requirements with `pip install -r requirements.txt`
+4. **Port Already in Use**: Change Streamlit port with `streamlit run app.py --server.port 8502`
+
+### Reset Database
+
+To completely reset the database:
+
+```sql
+DROP DATABASE IF EXISTS notice_board;
+source db_setup.sql;
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -am 'Add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Create a Pull Request
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
